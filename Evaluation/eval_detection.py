@@ -11,7 +11,7 @@ from utils import segment_iou
 class ANETdetection(object):
 
     GROUND_TRUTH_FIELDS = ['database', 'taxonomy', 'version']
-    PREDICTION_FIELDS = ['results', 'version']
+    PREDICTION_FIELDS = ['results', 'version', 'external_data']
 
     def __init__(self, ground_truth_filename=None, prediction_filename=None,
                  ground_truth_fields=GROUND_TRUTH_FIELDS,
