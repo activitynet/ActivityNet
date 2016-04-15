@@ -142,7 +142,8 @@ class ANETdetection(object):
         """
         ap = self.wrapper_compute_average_precision()
         if self.verbose:
-            print '[RESULTS] Mean Average Precision: {}'.format(ap.mean())
+            print '[RESULTS] Performance on ActivityNet detection task.'
+            print '\tMean Average Precision: {}'.format(ap.mean())
         self.ap = ap
 
 def compute_average_precision_detection(ground_truth, prediction, tiou_thr=0.5):

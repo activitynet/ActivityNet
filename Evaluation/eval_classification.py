@@ -138,8 +138,10 @@ class ANETclassification(object):
         hit_at_k = compute_video_hit_at_k(self.ground_truth,
                                           self.prediction, top_k=self.top_k)
         if self.verbose:
-            print '[RESULTS] Mean Average Precision: {}'.format(ap.mean())
-            print '[RESULTS] Hit@{}: {}'.format(self.top_k, hit_at_k)
+            print ('[RESULTS] Performance on ActivityNet untrimmed video '
+                   'classification task.')
+            print '\tMean Average Precision: {}'.format(ap.mean())
+            print '\tHit@{}: {}'.format(self.top_k, hit_at_k)
         self.ap = ap
         self.hit_at_k = hit_at_k
 
