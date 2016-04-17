@@ -12,17 +12,14 @@ def get_blocked_videos(api=API):
     return json.loads(response.read())
 
 def interpolated_prec_rec(prec, rec):
-    """Interpolated AP - THUMOS paradigm.
+    """Interpolated AP - VOCdevkit from VOC 2011.
     """
-    ap = 0
-    recall_points = np.arange(0, 1.1, 0.1)
-    n_points = float(recall_points.size)
-    for recall_thr in recall_points:
-        idx = rec >= recall_thr
-        p = 0
-        if idx.any():
-            p = prec[idx].max()
-        ap += p / n_points
+    mprec = np.hstack([[0], prec, [0]])
+    mrec = np.hstack([[0], rec, [1]])
+    for i in range(len(mprec) - 1)[::-1]:
+        mprec[i] = max(mprec[i], mprec[i + 1])
+    idx = np.where(mrec[1::] != mrec[0:-1])[0] + 1
+    ap = np.sum((mrec[idx] - mrec[idx - 1]) * mprec[idx])
     return ap
 
 def segment_iou(target_segment, candidate_segments):
