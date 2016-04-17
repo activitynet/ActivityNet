@@ -217,4 +217,4 @@ def compute_average_precision_detection(ground_truth, prediction, tiou_thr=0.5):
     fp = np.cumsum(fp).astype(np.float)
     rec = tp / npos
     prec = tp / (tp + fp)
-    return interpolated_prec_rec(rec, prec)
+    return interpolated_prec_rec(prec, rec)

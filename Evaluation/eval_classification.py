@@ -203,7 +203,7 @@ def compute_average_precision_classification(ground_truth, prediction):
     fp = np.cumsum(fp).astype(np.float)
     rec = tp / npos
     prec = tp / (tp + fp)
-    return interpolated_prec_rec(rec, prec)
+    return interpolated_prec_rec(prec, rec)
 
 def compute_video_hit_at_k(ground_truth, prediction, top_k=3):
     """Compute accuracy at k prediction between ground truth and
