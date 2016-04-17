@@ -3,10 +3,10 @@ import argparse
 from eval_detection import ANETdetection
 
 def main(ground_truth_filename, prediction_filename,
-         subset='validation', tiou_thr=0.5, verbose=True):
+         subset='validation', tiou_thr=0.5, verbose=True, check_status=True):
     anet_detection = ANETdetection(ground_truth_filename, prediction_filename,
                                    subset=subset, tiou_thr=tiou_thr,
-                                   verbose=verbose)
+                                   verbose=verbose, check_status=True)
     anet_detection.evaluate()
 
 def parse_input():
@@ -25,6 +25,7 @@ def parse_input():
     p.add_argument('--tiou_thr', type=float, default=0.5,
                    help='Temporal intersection over union threshold.')
     p.add_argument('--verbose', type=bool, default=True)
+    p.add_argument('--check_status', type=bool, default=True)
     return p.parse_args()
 
 if __name__ == '__main__':

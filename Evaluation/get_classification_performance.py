@@ -3,10 +3,11 @@ import argparse
 from eval_classification import ANETclassification
 
 def main(ground_truth_filename, prediction_filename,
-         subset='validation', tiou_thr=0.5, verbose=True):
+         subset='validation', tiou_thr=0.5, verbose=True, check_status=True):
     anet_classification = ANETclassification(ground_truth_filename,
                                              prediction_filename,
-                                             subset=subset, verbose=verbose)
+                                             subset=subset, verbose=verbose,
+                                             check_status=True)
     anet_classification.evaluate()
 
 def parse_input():
@@ -23,6 +24,7 @@ def parse_input():
                    help=('String indicating subset to evaluate: '
                          '(training, validation)'))
     p.add_argument('--verbose', type=bool, default=True)
+    p.add_argument('--check_status', type=bool, default=True)
     return p.parse_args()
 
 if __name__ == '__main__':

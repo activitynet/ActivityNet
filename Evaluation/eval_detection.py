@@ -16,7 +16,8 @@ class ANETdetection(object):
     def __init__(self, ground_truth_filename=None, prediction_filename=None,
                  ground_truth_fields=GROUND_TRUTH_FIELDS,
                  prediction_fields=PREDICTION_FIELDS,
-                 tiou_thr=0.5, subset='validation', verbose=False):
+                 tiou_thr=0.5, subset='validation', verbose=False, 
+                 check_status=True):
         if not ground_truth_filename:
             raise IOError('Please input a valid ground truth file.')
         if not prediction_filename:
@@ -27,8 +28,12 @@ class ANETdetection(object):
         self.gt_fields = ground_truth_fields
         self.pred_fields = prediction_fields
         self.ap = None
+        self.check_status = check_status
         # Retrieve blocked videos from server.
-        self.blocked_videos = get_blocked_videos()
+        if self.check_status:
+            self.blocked_videos = get_blocked_videos()
+        else:
+            self.blocked_videos = list()
         # Import ground truth and predictions.
         self.ground_truth, self.activity_index = self._import_ground_truth(
             ground_truth_filename)
@@ -64,11 +69,9 @@ class ANETdetection(object):
         if not all([field in data.keys() for field in self.gt_fields]):
             raise IOError('Please input a valid ground truth file.')
 
-        # Initialize data frame
-        columns=['video-id', 't-start', 't-end', 'label']
-        ground_truth = pd.DataFrame(columns=columns)
+        # Read ground truth data.
         activity_index, cidx = {}, 0
-        idx = 0
+        video_lst, t_start_lst, t_end_lst, label_lst = [], [], [], []
         for videoid, v in data['database'].iteritems():
             if self.subset != v['subset']:
                 continue
@@ -78,11 +81,15 @@ class ANETdetection(object):
                 if ann['label'] not in activity_index:
                     activity_index[ann['label']] = cidx
                     cidx += 1
-                ground_truth.loc[idx] = {'video-id': videoid,
-                                         't-start': ann['segment'][0],
-                                         't-end': ann['segment'][1],
-                                         'label': activity_index[ann['label']]}
-                idx += 1
+                video_lst.append(videoid)
+                t_start_lst.append(ann['segment'][0])
+                t_end_lst.append(ann['segment'][1])
+                label_lst.append(activity_index[ann['label']])
+
+        ground_truth = pd.DataFrame({'video-id': video_lst,
+                                     't-start': t_start_lst,
+                                     't-end': t_end_lst,
+                                     'label': label_lst})
         return ground_truth, activity_index
 
     def _import_prediction(self, prediction_filename):
@@ -105,21 +112,24 @@ class ANETdetection(object):
         if not all([field in data.keys() for field in self.pred_fields]):
             raise IOError('Please input a valid prediction file.')
 
-        # Initialize data frame
-        columns = ['video-id', 't-start', 't-end', 'label', 'score']
-        prediction = pd.DataFrame(columns=columns)
-        idx = 0
+        # Read predicitons.
+        video_lst, t_start_lst, t_end_lst = [], [], []
+        label_lst, score_lst = [], []
         for videoid, v in data['results'].iteritems():
             if videoid in self.blocked_videos:
                 continue
             for result in v:
                 label = self.activity_index[result['label']]
-                prediction.loc[idx] = {'video-id': videoid,
-                                       't-start': result['segment'][0],
-                                       't-end': result['segment'][1],
-                                       'label': label,
-                                       'score': result['score']}
-                idx += 1
+                video_lst.append(videoid)
+                t_start_lst.append(result['segment'][0])
+                t_end_lst.append(result['segment'][1])
+                label_lst.append(label)
+                score_lst.append(result['score'])
+        prediction = pd.DataFrame({'video-id': video_lst,
+                                   't-start': t_start_lst,
+                                   't-end': t_end_lst,
+                                   'label': label_lst,
+                                   'score': score_lst})
         return prediction
 
     def wrapper_compute_average_precision(self):

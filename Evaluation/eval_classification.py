@@ -14,7 +14,8 @@ class ANETclassification(object):
     def __init__(self, ground_truth_filename=None, prediction_filename=None,
                  ground_truth_fields=GROUND_TRUTH_FIELDS,
                  prediction_fields=PREDICTION_FIELDS,
-                 subset='validation', verbose=False, top_k=3):
+                 subset='validation', verbose=False, top_k=3, 
+                 check_status=True):
         if not ground_truth_filename:
             raise IOError('Please input a valid ground truth file.')
         if not prediction_filename:
@@ -26,8 +27,12 @@ class ANETclassification(object):
         self.top_k = top_k
         self.ap = None
         self.hit_at_k = None
+        self.check_status = check_status
         # Retrieve blocked videos from server.
-        self.blocked_videos = get_blocked_videos()
+        if self.check_status:
+            self.blocked_videos = get_blocked_videos()
+        else:
+            self.blocked_videos = list()
         # Import ground truth and predictions.
         self.ground_truth, self.activity_index = self._import_ground_truth(
             ground_truth_filename)
@@ -63,10 +68,8 @@ class ANETclassification(object):
             raise IOError('Please input a valid ground truth file.')
 
         # Initialize data frame
-        columns=['video-id', 'label']
-        ground_truth = pd.DataFrame(columns=columns)
         activity_index, cidx = {}, 0
-        idx = 0
+        video_lst, label_lst = [], []
         for videoid, v in data['database'].iteritems():
             if self.subset != v['subset']:
                 continue
@@ -76,9 +79,10 @@ class ANETclassification(object):
                 if ann['label'] not in activity_index:
                     activity_index[ann['label']] = cidx
                     cidx += 1
-                ground_truth.loc[idx] = {'video-id': videoid,
-                                         'label': activity_index[ann['label']]}
-                idx += 1
+                video_lst.append(videoid)
+                label_lst.append(activity_index[ann['label']])
+        ground_truth = pd.DataFrame({'video-id': video_lst,
+                                     'label': label_lst})
         ground_truth = ground_truth.drop_duplicates().reset_index(drop=True)
         return ground_truth, activity_index
 
@@ -103,18 +107,18 @@ class ANETclassification(object):
             raise IOError('Please input a valid prediction file.')
 
         # Initialize data frame
-        columns = ['video-id', 'label', 'score']
-        prediction = pd.DataFrame(columns=columns)
-        idx = 0
+        video_lst, label_lst, score_lst = [], [], []
         for videoid, v in data['results'].iteritems():
             if videoid in self.blocked_videos:
                 continue
             for result in v:
                 label = self.activity_index[result['label']]
-                prediction.loc[idx] = {'video-id': videoid,
-                                       'label': label,
-                                       'score': result['score']}
-                idx += 1
+                video_lst.append(videoid)
+                label_lst.append(label)
+                score_lst.append(result['score'])
+        prediction = pd.DataFrame({'video-id': video_lst,
+                                   'label': label_lst,
+                                   'score': score_lst})
         return prediction
 
     def wrapper_compute_average_precision(self):
