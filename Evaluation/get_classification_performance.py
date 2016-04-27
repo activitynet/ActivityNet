@@ -3,7 +3,7 @@ import argparse
 from eval_classification import ANETclassification
 
 def main(ground_truth_filename, prediction_filename,
-         subset='validation', tiou_thr=0.5, verbose=True, check_status=True):
+         subset='validation', verbose=True, check_status=True):
     anet_classification = ANETclassification(ground_truth_filename,
                                              prediction_filename,
                                              subset=subset, verbose=verbose,
