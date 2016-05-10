@@ -14,7 +14,7 @@ class ANETclassification(object):
     def __init__(self, ground_truth_filename=None, prediction_filename=None,
                  ground_truth_fields=GROUND_TRUTH_FIELDS,
                  prediction_fields=PREDICTION_FIELDS,
-                 subset='validation', verbose=False, top_k=3, 
+                 subset='validation', verbose=False, top_k=3,
                  check_status=True):
         if not ground_truth_filename:
             raise IOError('Please input a valid ground truth file.')
@@ -141,13 +141,17 @@ class ANETclassification(object):
         ap = self.wrapper_compute_average_precision()
         hit_at_k = compute_video_hit_at_k(self.ground_truth,
                                           self.prediction, top_k=self.top_k)
+        avg_hit_at_k = compute_video_hit_at_k(
+            self.ground_truth, self.prediction, top_k=self.top_k, avg=True)
         if self.verbose:
             print ('[RESULTS] Performance on ActivityNet untrimmed video '
                    'classification task.')
             print '\tMean Average Precision: {}'.format(ap.mean())
             print '\tHit@{}: {}'.format(self.top_k, hit_at_k)
+            print '\tAvg Hit@{}: {}'.format(self.top_k, avg_hit_at_k)
         self.ap = ap
         self.hit_at_k = hit_at_k
+        self.avg_hit_at_k = avg_hit_at_k
 
 ################################################################################
 # Metrics
@@ -205,7 +209,7 @@ def compute_average_precision_classification(ground_truth, prediction):
     prec = tp / (tp + fp)
     return interpolated_prec_rec(prec, rec)
 
-def compute_video_hit_at_k(ground_truth, prediction, top_k=3):
+def compute_video_hit_at_k(ground_truth, prediction, top_k=3, avg=False):
     """Compute accuracy at k prediction between ground truth and
     predictions data frames. This code is greatly inspired by evaluation
     performed in Karpathy et al. CVPR14.
@@ -225,9 +229,8 @@ def compute_video_hit_at_k(ground_truth, prediction, top_k=3):
         Top k accuracy score.
     """
     video_ids = np.unique(ground_truth['video-id'].values)
-    n_videos = float(video_ids.size)
-    hits = 0
-    for vid in video_ids:
+    avg_hits_per_vid = np.zeros(video_ids.size)
+    for i, vid in enumerate(video_ids):
         pred_idx = prediction['video-id'] == vid
         if not pred_idx.any():
             continue
@@ -239,6 +242,8 @@ def compute_video_hit_at_k(ground_truth, prediction, top_k=3):
         pred_label = this_pred['label'].tolist()
         gt_idx = ground_truth['video-id'] == vid
         gt_label = ground_truth.loc[gt_idx]['label'].tolist()
-        if any([this_label in pred_label for this_label in gt_label]):
-            hits += 1
-    return hits / n_videos
+        avg_hits_per_vid[i] = np.mean([1 if this_label in pred_label else 0
+                                       for this_label in gt_label])
+        if not avg:
+            avg_hits_per_vid[i] = np.ceil(avg_hits_per_vid[i])
+    return float(avg_hits_per_vid.mean())
