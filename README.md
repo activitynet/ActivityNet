@@ -10,6 +10,12 @@ This repository is intended to hosts tools and demos for ActivityNet.
 | Main contributor | Contributor | Advisor | Advisor |
 | [Fabian Caba][web-cabaf] | [Victor Escorcia][web-victor] | [Bernard Ghanem][web-bernard] | [Juan Carlos Niebles][web-jc] |
 
+# Do you want to contribute?
+
+1. Check the open issues or open a new issue to start a discussion around your new idea or the bug you found
+2. For the repository and make your changes!
+3. Send a pull request
+
 [image-cabaf]: http://activity-net.org/challenges/2016/images/fabian.png "Fabian Caba Heilbron"
 [image-jc]: http://activity-net.org/images/juan.png "Juan Carlos Niebles"
 [image-bernard]: http://activity-net.org/images/bernard.png "Bernard Ghanem"
