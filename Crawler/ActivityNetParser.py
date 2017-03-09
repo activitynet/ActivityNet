@@ -49,11 +49,11 @@ for i in range(0,len(videos)):
 		if os.path.isdir(newdir)==0:
 			os.mkdir(newdir)
 		for j in range(0,seglen):
-            stri=v2[j].items()
-            seg=stri[0]
-            t=seg[1]
-            tstart=t[0]
-            tend=t[1]
+            		stri=v2[j].items()
+            		seg=stri[0]
+            		t=seg[1]
+            		tstart=t[0]
+            		tend=t[1]
 			vstr=newdir+'/'+video[0:len(video)-4]+str(j)+'.mp4'
 			ffmpeg_extract_subclip(video, tstart, tend, targetname=vstr)
 	if s1==str3:
@@ -65,11 +65,11 @@ for i in range(0,len(videos)):
 		if os.path.isdir(newdir)==0:
 			os.mkdir(newdir)
 		for j in range(0,seglen):
-            stri=v2[j].items()
-            seg=stri[0]
-            t=seg[1]
-            tstart=t[0]
-            tend=t[1]
+            		stri=v2[j].items()
+            		seg=stri[0]
+            		t=seg[1]
+            		tstart=t[0]
+            		tend=t[1]
 			vstr=newdir+'/'+video[0:len(video)-4]+str(j)+'.mp4'
 			ffmpeg_extract_subclip(video, tstart, tend, targetname=vstr)
 	
