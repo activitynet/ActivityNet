@@ -212,6 +212,9 @@ def compute_average_precision_detection(ground_truth, prediction, tiou_thr=0.5):
             lock_gt[this_gt.loc[jdx]['index']] = idx
             break
 
+        if fp[idx] == 0 and tp[idx] == 0:
+            fp[idx] = 1
+
     # Computing prec-rec
     tp = np.cumsum(tp).astype(np.float)
     fp = np.cumsum(fp).astype(np.float)
