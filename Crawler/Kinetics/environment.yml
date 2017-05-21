@@ -1,0 +1,28 @@
+name: kinetics
+channels: !!python/tuple
+- !!python/unicode
+  'defaults'
+dependencies:
+- joblib=0.9.4=py27_0
+- menpo::ffmpeg=3.1.3=0
+- mkl=2017.0.1=0
+- numpy=1.12.1=py27_0
+- openssl=1.0.2k=1
+- pandas=0.19.2=np112py27_1
+- pip=9.0.1=py27_1
+- python=2.7.13=0
+- python-dateutil=2.6.0=py27_0
+- pytz=2017.2=py27_0
+- readline=6.2=2
+- setuptools=27.2.0=py27_0
+- six=1.10.0=py27_0
+- sqlite=3.13.0=0
+- tk=8.5.18=0
+- wheel=0.29.0=py27_0
+- zlib=1.2.8=3
+- pip:
+  - decorator==4.0.11
+  - olefile==0.44
+  - youtube-dl==2017.3.26
+prefix: /home/cabaf/.conda/envs/kinetics
+
