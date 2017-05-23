@@ -1,6 +1,6 @@
 import argparse
 
-from eval_classification import ANETclassification
+from eval_kinetics import ANETclassification
 
 def main(ground_truth_filename, prediction_filename,
          subset='validation', verbose=True, check_status=True):
