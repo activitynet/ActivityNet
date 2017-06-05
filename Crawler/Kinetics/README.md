@@ -11,6 +11,7 @@ Next, setup your environment
 ```
 conda env create -f environment.yml
 source activate kinetics
+pip install --upgrade youtube-dl
 ```
 
 Finally, download a dataset split by calling:
