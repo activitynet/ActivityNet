@@ -23,6 +23,6 @@ dependencies:
 - pip:
   - decorator==4.0.11
   - olefile==0.44
-  - youtube-dl==2017.3.26
+  - youtube-dl==2017.6.5
 prefix: /home/cabaf/.conda/envs/kinetics
 
