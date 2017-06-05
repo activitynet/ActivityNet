@@ -22,7 +22,8 @@ status_and_reason_to_message_dict = {
 
     ('Unavailable','Copyright'): ['multiple third-party notifications of copyright infringement.',
                                   'This video is no longer available due to a copyright claim',
-                                  'blocked it on copyright grounds'],
+                                  'blocked it on copyright grounds',
+                                  'a duplicate of a previously uploaded video'],
 
     ('Unavailable','Country-Block'): ['The uploader has not made this video available in your country.',
                                       'who has blocked it in your country on copyright grounds.'],
@@ -32,6 +33,7 @@ status_and_reason_to_message_dict = {
     ('Unavailable','Sign-In'): ['Please sign in to view this video.'],
     ('Unavailable','Private'): ['This video is private.'],
     ('Unavailable','Guidelines'): ['Community Guidelines.'],
+    ('Unavailable','Harassment and Bullying'): ['policy on harassment and bullying.'],
     ('Unavailable','Service-Terms'): ['Terms of Service.'],
     ('Unavailable','Harmful'): ['policy on harmful or dangerous content'],
     }
