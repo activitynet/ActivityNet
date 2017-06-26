@@ -198,23 +198,28 @@ def average_recall_vs_avg_nr_proposals(ground_truth, proposals,
     score_lst = []
     total_nr_proposals = 0
     for videoid in video_lst:
-
-        # Get proposals for this video.
-        proposals_videoid = proposals_gbvn.get_group(videoid)
-        this_video_proposals = proposals_videoid.loc[:, ['t-start', 't-end']].values
-
-        # Sort proposals by score.
-        sort_idx = proposals_videoid['score'].argsort()[::-1]
-        this_video_proposals = this_video_proposals[sort_idx, :]
-
         # Get ground-truth instances associated to this video.
         ground_truth_videoid = ground_truth_gbvn.get_group(videoid)
         this_video_ground_truth = ground_truth_videoid.loc[:,['t-start', 't-end']].values
+
+        # Get proposals for this video.
+        try:
+            proposals_videoid = proposals_gbvn.get_group(videoid)
+        except:
+            n = this_video_ground_truth.shape[0]
+            score_lst.append(np.zeros((n, 1)))
+            continue
+
+        this_video_proposals = proposals_videoid.loc[:, ['t-start', 't-end']].values
 
         if this_video_proposals.shape[0] == 0:
             n = this_video_ground_truth.shape[0]
             score_lst.append(np.zeros((n, 1)))
             continue
+
+        # Sort proposals by score.
+        sort_idx = proposals_videoid['score'].argsort()[::-1]
+        this_video_proposals = this_video_proposals[sort_idx, :]
 
         if this_video_proposals.ndim != 2:
             this_video_proposals = np.expand_dims(this_video_proposals, axis=0)
