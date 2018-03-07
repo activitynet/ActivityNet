@@ -87,7 +87,7 @@ def download_clip(video_identifier, output_filename,
             direct_download_url = subprocess.check_output(command,
                                                           shell=True,
                                                           stderr=subprocess.STDOUT)
-            direct_download_url = direct_download_url.strip()
+            direct_download_url = direct_download_url.strip().decode('utf-8')
          except subprocess.CalledProcessError as err:
             attempts += 1
             if attempts == num_attempts:
