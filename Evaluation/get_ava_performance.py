@@ -14,6 +14,7 @@ from __future__ import print_function
 import argparse
 from collections import defaultdict
 import csv
+import logging
 import pprint
 import sys
 import time
@@ -24,8 +25,7 @@ from ava import standard_fields
 
 
 def print_time(message, start):
-  print(
-      "==> %g seconds to %s" % (time.time() - start, message), file=sys.stderr)
+  logging.info("==> %g seconds to %s", time.time() - start, message)
 
 
 def read_csv(csv_file, class_whitelist=None):
@@ -105,10 +105,8 @@ def run_evaluation(labelmap, groundtruth, detections):
     detections: file object
   """
   categories, class_whitelist = read_labelmap(labelmap)
-  print(
-      "CATEGORIES (%d):\n%s" % (len(categories),
-                                pprint.pformat(categories, indent=2)),
-      file=sys.stderr)
+  logging.info("CATEGORIES (%d):\n%s", len(categories),
+               pprint.pformat(categories, indent=2))
 
   pascal_evaluator = object_detection_evaluation.PascalDetectionEvaluator(
       categories)
@@ -179,6 +177,7 @@ def parse_arguments():
 
 
 def main():
+  logging.basicConfig(level=logging.INFO)
   args = parse_arguments()
   run_evaluation(**vars(args))
 

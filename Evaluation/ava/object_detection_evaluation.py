@@ -671,7 +671,7 @@ class ObjectDetectionEvaluation(object):
         mean_corloc: Mean CorLoc score for each class, float scalar
     """
     if (self.num_gt_instances_per_class == 0).any():
-      logging.warn(
+      logging.info(
           'The following classes have no ground truth examples: %s',
           np.squeeze(np.argwhere(self.num_gt_instances_per_class == 0)) +
           self.label_id_offset)
