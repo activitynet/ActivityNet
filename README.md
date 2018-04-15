@@ -24,8 +24,8 @@ This repository is intended to hosts tools and demos for ActivityNet.
 
 [logo]: http://activity-net.org/challenges/2016/images/logo_activitynet.gif
 
-[web-cabaf]: http://www.cabaf.net/
-[web-humam]: https://ivul.kaust.edu.sa/Pages/People-Humam-Alwassel.aspx
+[web-cabaf]: http://www.fabiancaba.com
+[web-humam]: http://www.humamalwassel.com
 [web-victor]: http://escorciav.github.io/
 [web-bernard]: http://www.bernardghanem.com/
 [web-jc]: http://www.niebles.net/
