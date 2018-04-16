@@ -7,6 +7,7 @@ The Evaluation Toolkit is purely written in Python (>=2.7) and it requires the
 following third party libraries:
 * [Numpy](http://www.numpy.org/)
 * [Pandas](http://pandas.pydata.org/)
+* [Joblib](https://pythonhosted.org/joblib/)
 
 ##Getting started
 We include sample prediction files in the folder data to show how to evaluate your prediction results. Please follow this steps to obtain the performance evaluation on the provided sample files:

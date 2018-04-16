@@ -3,6 +3,7 @@ import urllib2
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 
 from utils import get_blocked_videos
 from utils import interpolated_prec_rec
@@ -88,8 +89,8 @@ class ANETproposal(object):
                     activity_index[ann['label']] = cidx
                     cidx += 1
                 video_lst.append(videoid)
-                t_start_lst.append(ann['segment'][0])
-                t_end_lst.append(ann['segment'][1])
+                t_start_lst.append(float(ann['segment'][0]))
+                t_end_lst.append(float(ann['segment'][1]))
                 label_lst.append(activity_index[ann['label']])
 
         ground_truth = pd.DataFrame({'video-id': video_lst,
@@ -126,8 +127,8 @@ class ANETproposal(object):
                 continue
             for result in v:
                 video_lst.append(videoid)
-                t_start_lst.append(result['segment'][0])
-                t_end_lst.append(result['segment'][1])
+                t_start_lst.append(float(result['segment'][0]))
+                t_end_lst.append(float(result['segment'][1]))
                 score_lst.append(result['score'])
         proposal = pd.DataFrame({'video-id': video_lst,
                                    't-start': t_start_lst,
