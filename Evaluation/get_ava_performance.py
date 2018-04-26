@@ -115,7 +115,7 @@ def read_labelmap(labelmap_file):
   for line in labelmap_file:
     if line.startswith("  name:"):
       name = line.split('"')[1]
-    elif line.startswith("  id:"):
+    elif line.startswith("  id:") or line.startswith("  label_id:"):
       class_id = int(line.strip().split(" ")[-1])
       labelmap.append({"id": class_id, "name": name})
       class_ids.add(class_id)
