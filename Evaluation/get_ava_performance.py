@@ -222,7 +222,6 @@ def parse_arguments():
 def main():
   logging.basicConfig(level=logging.INFO)
   args = parse_arguments()
-  print(args)
   run_evaluation(**vars(args))
 
 
