@@ -134,6 +134,16 @@ class ANETdetection(object):
                                    'score': score_lst})
         return prediction
 
+    def _get_predictions_with_label(self, prediction_by_label, label_name, cidx):
+        """Get all predicitons of the given label. Return empty DataFrame if there
+        is no predcitions with the given label. 
+        """
+        try:
+            return prediction_by_label.get_group(cidx).reset_index(drop=True)
+        except:
+            print 'Warning: No predictions of label \'%s\' were provdied.' % label_name
+            return pd.DataFrame()
+
     def wrapper_compute_average_precision(self):
         """Computes average precision for each class in the subset.
         """
@@ -146,9 +156,9 @@ class ANETdetection(object):
         results = Parallel(n_jobs=len(self.activity_index))(
                     delayed(compute_average_precision_detection)(
                         ground_truth=ground_truth_by_label.get_group(cidx).reset_index(drop=True),
-                        prediction=prediction_by_label.get_group(cidx).reset_index(drop=True),
+                        prediction=self._get_predictions_with_label(prediction_by_label, label_name, cidx),
                         tiou_thresholds=self.tiou_thresholds,
-                    ) for cidx in self.activity_index.values())
+                    ) for label_name, cidx in self.activity_index.items())
 
         for i, cidx in enumerate(self.activity_index.values()):
             ap[:,cidx] = results[i]
@@ -191,6 +201,10 @@ def compute_average_precision_detection(ground_truth, prediction, tiou_threshold
     ap : float
         Average precision score.
     """
+    ap = np.zeros(len(tiou_thresholds))
+    if prediction.empty:
+        return ap
+
     npos = float(len(ground_truth))
     lock_gt = np.ones((len(tiou_thresholds),len(ground_truth))) * -1
     # Sort predictions by decreasing score order.
@@ -240,7 +254,6 @@ def compute_average_precision_detection(ground_truth, prediction, tiou_threshold
 
     precision_cumsum = tp_cumsum / (tp_cumsum + fp_cumsum)
 
-    ap = np.zeros(len(tiou_thresholds))
     for tidx in range(len(tiou_thresholds)):
         ap[tidx] = interpolated_prec_rec(precision_cumsum[tidx,:], recall_cumsum[tidx,:])
 
