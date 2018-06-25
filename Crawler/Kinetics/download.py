@@ -1,3 +1,4 @@
+
 import argparse
 import glob
 import json
@@ -92,15 +93,16 @@ def download_clip(video_identifier, output_filename,
             attempts += 1
             if attempts == num_attempts:
                 return status, err.output
-        else:
-            break
+            else:
+                break
 
     # Construct command to trim the videos (ffmpeg required).
     command = ['ffmpeg',
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
                '-i', "'%s'" % direct_download_url,
-               '-c:v', 'copy', '-c:a', 'copy',
+               '-c:v', 'libx264', '-preset', 'veryfast',
+               '-c:a', 'aac',
                '-threads', '1',
                '-loglevel', 'panic',
                '"%s"' % output_filename]
