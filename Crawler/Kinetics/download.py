@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import argparse
 import glob
@@ -104,7 +105,7 @@ def download_clip(video_identifier, output_filename,
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
                '-i', "'%s'" % direct_download_url,
-               '-c:v', 'libx264', '-preset', 'veryfast',
+               '-c:v', 'libx264', '-preset', 'ultrafast',
                '-c:a', 'aac',
                '-threads', '1',
                '-loglevel', 'panic',
