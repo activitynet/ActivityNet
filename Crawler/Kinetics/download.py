@@ -78,10 +78,11 @@ def download_clip(video_identifier, output_filename,
     # Construct command line for getting the direct video link.
     command = ['youtube-dl',
                '--quiet', '--no-warnings',
-               '-f', 'mp4',
+               '-f', '18', # 640x360 h264 encoded video
                '--get-url',
                '"%s"' % (url_base + video_identifier)]
     command = ' '.join(command)
+    direct_download_url = None
     attempts = 0
     while True:
          try:
@@ -94,7 +95,9 @@ def download_clip(video_identifier, output_filename,
             if attempts == num_attempts:
                 return status, err.output
             else:
-                break
+                continue
+
+         break
 
     # Construct command to trim the videos (ffmpeg required).
     command = ['ffmpeg',
