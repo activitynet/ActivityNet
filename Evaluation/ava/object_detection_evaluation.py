@@ -471,9 +471,7 @@ class ObjectDetectionEvaluation(object):
 
     self.per_image_eval = per_image_evaluation.PerImageEvaluation(
         num_groundtruth_classes=num_groundtruth_classes,
-        matching_iou_threshold=matching_iou_threshold,
-        nms_iou_threshold=nms_iou_threshold,
-        nms_max_output_boxes=nms_max_output_boxes)
+        matching_iou_threshold=matching_iou_threshold)
     self.num_class = num_groundtruth_classes
     self.use_weighted_mean_ap = use_weighted_mean_ap
     self.label_id_offset = label_id_offset
@@ -611,7 +609,7 @@ class ObjectDetectionEvaluation(object):
         groundtruth_masks = np.empty(shape=[0, 1, 1], dtype=float)
       groundtruth_is_difficult_list = np.array([], dtype=bool)
       groundtruth_is_group_of_list = np.array([], dtype=bool)
-    scores, tp_fp_labels, is_class_correctly_detected_in_image = (
+    scores, tp_fp_labels = (
         self.per_image_eval.compute_object_detection_metrics(
             detected_boxes=detected_boxes,
             detected_scores=detected_scores,
@@ -627,8 +625,6 @@ class ObjectDetectionEvaluation(object):
       if scores[i].shape[0] > 0:
         self.scores_per_class[i].append(scores[i])
         self.tp_fp_labels_per_class[i].append(tp_fp_labels[i])
-    (self.num_images_correctly_detected_per_class
-    ) += is_class_correctly_detected_in_image
 
   def _update_ground_truth_statistics(self, groundtruth_class_labels,
                                       groundtruth_is_difficult_list,
