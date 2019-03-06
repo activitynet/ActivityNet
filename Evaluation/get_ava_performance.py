@@ -18,6 +18,7 @@ from __future__ import print_function
 import argparse
 from collections import defaultdict
 import csv
+import heapq
 import logging
 import pprint
 import sys
@@ -37,7 +38,7 @@ def make_image_key(video_id, timestamp):
   return "%s,%04d" % (video_id, int(timestamp))
 
 
-def read_csv(csv_file, class_whitelist=None):
+def read_csv(csv_file, class_whitelist=None, capacity=0):
   """Loads boxes and class labels from a CSV file in the AVA format.
 
   CSV file format described at https://research.google.com/ava/download.html.
@@ -46,6 +47,8 @@ def read_csv(csv_file, class_whitelist=None):
     csv_file: A file object.
     class_whitelist: If provided, boxes corresponding to (integer) class labels
       not in this set are skipped.
+    capacity: Maximum number of labeled boxes allowed for each example.
+      Default is 0 where there is no limit.
 
   Returns:
     boxes: A dictionary mapping each unique image key (string) to a list of
@@ -57,6 +60,7 @@ def read_csv(csv_file, class_whitelist=None):
       scores are not provided in the csv, then they will default to 1.0.
   """
   start = time.time()
+  entries = defaultdict(list)
   boxes = defaultdict(list)
   labels = defaultdict(list)
   scores = defaultdict(list)
@@ -71,9 +75,20 @@ def read_csv(csv_file, class_whitelist=None):
     score = 1.0
     if len(row) == 8:
       score = float(row[7])
-    boxes[image_key].append([y1, x1, y2, x2])
-    labels[image_key].append(action_id)
-    scores[image_key].append(score)
+    if capacity < 1 or len(entries[image_key]) < capacity:
+      heapq.heappush(entries[image_key],
+                     (score, action_id, y1, x1, y2, x2))
+    elif score > entries[image_key][0][0]:
+      heapq.heapreplace(entries[image_key],
+                        (score, action_id, y1, x1, y2, x2))
+  for image_key in entries:
+    # Evaluation API assumes boxes with descending scores
+    entry = sorted(entries[image_key], key=lambda tup: -tup[0])
+    for item in entry:
+      score, action_id, y1, x1, y2, x2 = item
+      boxes[image_key].append([y1, x1, y2, x2])
+      labels[image_key].append(action_id)
+      scores[image_key].append(score)
   print_time("read file " + csv_file.name, start)
   return boxes, labels, scores
 
@@ -140,7 +155,7 @@ def run_evaluation(labelmap, groundtruth, detections, exclusions):
       categories)
 
   # Reads the ground truth data.
-  boxes, labels, _ = read_csv(groundtruth, class_whitelist)
+  boxes, labels, _ = read_csv(groundtruth, class_whitelist, 0)
   start = time.time()
   for image_key in boxes:
     if image_key in excluded_keys:
@@ -159,7 +174,7 @@ def run_evaluation(labelmap, groundtruth, detections, exclusions):
   print_time("convert groundtruth", start)
 
   # Reads detections data.
-  boxes, labels, scores = read_csv(detections, class_whitelist)
+  boxes, labels, scores = read_csv(detections, class_whitelist, 50)
   start = time.time()
   for image_key in boxes:
     if image_key in excluded_keys:
