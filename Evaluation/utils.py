@@ -3,7 +3,7 @@ import urllib2
 
 import numpy as np
 
-API = 'http://ec2-52-11-11-89.us-west-2.compute.amazonaws.com/challenge17/api.py'
+API = 'http://ec2-52-25-205-214.us-west-2.compute.amazonaws.com/challenge19/api.py'
 
 def get_blocked_videos(api=API):
     api_url = '{}?action=get_blocked'.format(api)
