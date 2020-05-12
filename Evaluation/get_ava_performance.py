@@ -17,6 +17,7 @@ from __future__ import print_function
 import argparse
 from collections import defaultdict
 import csv
+import decimal
 import heapq
 import logging
 import pprint
@@ -34,7 +35,7 @@ def print_time(message, start):
 
 def make_image_key(video_id, timestamp):
   """Returns a unique identifier for a video id & timestamp."""
-  return "%s,%04d" % (video_id, int(timestamp))
+  return "%s,%.6f" % (video_id, decimal.Decimal(timestamp))
 
 
 def read_csv(csv_file, class_whitelist=None, capacity=0):
