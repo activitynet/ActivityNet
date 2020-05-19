@@ -71,6 +71,9 @@ def read_csv(csv_file, class_whitelist=None, capacity=0):
     assert len(row) in [2, 7, 8], "Wrong number of columns: " + row
     image_key = make_image_key(row[0], row[1])
     all_keys.add(image_key)
+    # Rows with 2 tokens (videoid,timestatmp) indicates images with no detected
+    # / ground truth actions boxes. Add them to all_keys, so we can score
+    # appropriately, but otherwise skip the box creation steps.
     if len(row) == 2:
       continue
     x1, y1, x2, y2 = [float(n) for n in row[2:6]]
