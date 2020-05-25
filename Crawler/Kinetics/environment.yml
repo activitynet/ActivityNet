@@ -2,6 +2,7 @@ name: kinetics
 channels:
   - anaconda
   - menpo
+  - conda-forge
   - defaults
 dependencies:
   - ca-certificates=2020.1.1
