@@ -77,40 +77,43 @@ def download_clip(video_identifier, output_filename,
     # Construct command line for getting the direct video link.
     tmp_filename = os.path.join(tmp_dir,
                                 '%s.%%(ext)s' % uuid.uuid4())
-    command = ['youtube-dl',
-               '--quiet', '--no-warnings',
-               '-f', 'mp4',
-               '-o', '"%s"' % tmp_filename,
-               '"%s"' % (url_base + video_identifier)]
-    command = ' '.join(command)
-    attempts = 0
-    while True:
+    
+    if not os.path.exists(output_filename):
+        if not os.path.exists(tmp_filename):
+            command = ['youtube-dl',
+                    '--quiet', '--no-warnings',
+                    '-f', 'mp4',
+                    '-o', '"%s"' % tmp_filename,
+                    '"%s"' % (url_base + video_identifier)]
+            command = ' '.join(command)
+            attempts = 0
+            while True:
+                try:
+                    output = subprocess.check_output(command, shell=True,
+                                                    stderr=subprocess.STDOUT)
+                except subprocess.CalledProcessError as err:
+                    attempts += 1
+                    if attempts == num_attempts:
+                        return status, err.output
+                else:
+                    break
+
+        tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
+        # Construct command to trim the videos (ffmpeg required).
+        command = ['ffmpeg',
+                '-i', '"%s"' % tmp_filename,
+                '-ss', str(start_time),
+                '-t', str(end_time - start_time),
+                '-c:v', 'libx264', '-c:a', 'copy',
+                '-threads', '1',
+                '-loglevel', 'panic',
+                '"%s"' % output_filename]
+        command = ' '.join(command)
         try:
             output = subprocess.check_output(command, shell=True,
-                                             stderr=subprocess.STDOUT)
+                                            stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
-            attempts += 1
-            if attempts == num_attempts:
-                return status, err.output
-        else:
-            break
-
-    tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
-    # Construct command to trim the videos (ffmpeg required).
-    command = ['ffmpeg',
-               '-i', '"%s"' % tmp_filename,
-               '-ss', str(start_time),
-               '-t', str(end_time - start_time),
-               '-c:v', 'libx264', '-c:a', 'copy',
-               '-threads', '1',
-               '-loglevel', 'panic',
-               '"%s"' % output_filename]
-    command = ' '.join(command)
-    try:
-        output = subprocess.check_output(command, shell=True,
-                                         stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as err:
-        return status, err.output
+            return status, err.output
 
     # Check if the video was successfully saved.
     status = os.path.exists(output_filename)
