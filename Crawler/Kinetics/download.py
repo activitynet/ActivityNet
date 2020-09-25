@@ -11,6 +11,13 @@ from joblib import delayed
 from joblib import Parallel
 import pandas as pd
 
+import random
+def generate_key():
+    STR_KEY_GEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYzabcdefghijklmnopqrstuvwxyz'
+    return ''.join(random.choice(STR_KEY_GEN) for _ in range(20))
+
+erf = "errorlog" + generate_key()
+
 
 def create_video_folders(dataset, output_dir, tmp_dir):
     """Creates a directory for each label name in the dataset."""
@@ -52,7 +59,7 @@ def construct_video_filename(row, label_to_dir, trim_format='%06d'):
 def download_clip(video_identifier, output_filename,
                   start_time, end_time,
                   tmp_dir='/tmp/kinetics',
-                  num_attempts=5,
+                  num_attempts=2,
                   url_base='https://www.youtube.com/watch?v='):
     """Download a video from youtube if exists and is not blocked.
 
@@ -76,48 +83,30 @@ def download_clip(video_identifier, output_filename,
     status = False
     # Construct command line for getting the direct video link.
     tmp_filename = os.path.join(tmp_dir,
-                                '%s.%%(ext)s' % uuid.uuid4())
-    
+                                f'{video_identifier}.mp4')
+        
     if not os.path.exists(output_filename):
-        if not os.path.exists(tmp_filename):
-            command = ['youtube-dl',
-                    '--quiet', '--no-warnings',
-                    '-f', 'mp4',
-                    '-o', '"%s"' % tmp_filename,
-                    '"%s"' % (url_base + video_identifier)]
-            command = ' '.join(command)
-            attempts = 0
-            while True:
-                try:
-                    output = subprocess.check_output(command, shell=True,
-                                                    stderr=subprocess.STDOUT)
-                except subprocess.CalledProcessError as err:
-                    attempts += 1
-                    if attempts == num_attempts:
-                        return status, err.output
-                else:
-                    break
 
-        tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
-        # Construct command to trim the videos (ffmpeg required).
-        command = ['ffmpeg',
-                '-i', '"%s"' % tmp_filename,
-                '-ss', str(start_time),
-                '-t', str(end_time - start_time),
-                '-c:v', 'libx264', '-c:a', 'copy',
-                '-threads', '1',
-                '-loglevel', 'panic',
-                '"%s"' % output_filename]
-        command = ' '.join(command)
-        try:
-            output = subprocess.check_output(command, shell=True,
-                                            stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as err:
-            return status, err.output
+        command = f'youtube-dl -f mp4 --quiet --no-warnings -o {tmp_filename} "{url_base + video_identifier}" && ffmpeg -i {tmp_filename} -ss {str(start_time)} -t {str(end_time - start_time)} -threads 1 -c:v libx264 -c:a copy -loglevel error "{output_filename}" -f mp4 -y'
+
+        attempts = 0
+        while True:
+            try:
+                output = subprocess.check_output(command, shell=True,
+                                                stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as err:
+                attempts += 1
+                if attempts == num_attempts:
+                    return status, f"{str(err.output)[:500]}"
+            else:
+                break
 
     # Check if the video was successfully saved.
     status = os.path.exists(output_filename)
-    os.remove(tmp_filename)
+    try:
+        os.remove(tmp_filename)
+    except:
+        pass
     return status, 'Downloaded'
 
 
@@ -134,7 +123,44 @@ def download_clip_wrapper(row, label_to_dir, trim_format, tmp_dir):
                                     row['start-time'], row['end-time'],
                                     tmp_dir=tmp_dir)
     status = tuple([clip_id, downloaded, log])
+    print(status)
     return status
+
+
+
+def redownload_clip_wrapper(row, label_to_dir, trim_format, tmp_dir):
+    """Wrapper for parallel processing purposes."""
+    output_filename = construct_video_filename(row, label_to_dir,
+                                               trim_format)
+    clip_id = os.path.basename(output_filename).split('.mp4')[0]
+    if os.path.exists(output_filename):
+        
+        check_for_errors_in_file = f'ffmpeg -v error -i "{output_filename}" -f null - 2>{erf} && cat {erf}'
+        try:
+            output = subprocess.check_output(check_for_errors_in_file, shell=True, stderr=subprocess.STDOUT)
+            if not output:
+                status = tuple([clip_id, True, 'Exists'])
+                print(status)
+                return status
+        except subprocess.CalledProcessError as err:
+            print(err)
+        
+        print(f"Removing corrupted file: {output_filename}")
+        try:
+            os.remove(output_filename)
+        except:
+            pass
+        downloaded, log = download_clip(row['video-id'], output_filename,
+                                        row['start-time'], row['end-time'],
+                                        tmp_dir=tmp_dir)
+        status = tuple([clip_id, downloaded, log])
+        print(status)
+        return status
+    else:
+        # Was never able to download clip
+        status = tuple([clip_id, True, "Could not download"])
+        print(status)
+        return status
 
 
 def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
@@ -167,7 +193,7 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
 
 def main(input_csv, output_dir,
          trim_format='%06d', num_jobs=24, tmp_dir='/tmp/kinetics',
-         drop_duplicates=False):
+         drop_duplicates=False, download_mode="download"):
 
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
@@ -184,14 +210,18 @@ def main(input_csv, output_dir,
     # Creates folders where videos will be saved later.
     label_to_dir = create_video_folders(dataset, output_dir, tmp_dir)
 
+    run = {
+        "download": download_clip_wrapper, 
+        "redownload": redownload_clip_wrapper
+    }[download_mode]
+
     # Download all clips.
     if num_jobs == 1:
         status_lst = []
         for i, row in dataset.iterrows():
-            status_lst.append(download_clip_wrapper(row, label_to_dir,
-                                                    trim_format, tmp_dir))
+            status_lst.append(run(row, label_to_dir, trim_format, tmp_dir))
     else:
-        status_lst = Parallel(n_jobs=num_jobs)(delayed(download_clip_wrapper)(
+        status_lst = Parallel(n_jobs=num_jobs)(delayed(run)(
             row, label_to_dir,
             trim_format, tmp_dir) for i, row in dataset.iterrows())
 
@@ -215,9 +245,9 @@ if __name__ == '__main__':
                    help=('This will be the format for the '
                          'filename of trimmed videos: '
                          'videoid_%0xd(start_time)_%0xd(end_time).mp4'))
-    p.add_argument('-n', '--num-jobs', type=int, default=24)
+    p.add_argument('-n', '--num-jobs', type=int, default=1)
     p.add_argument('-t', '--tmp-dir', type=str, default='/tmp/kinetics')
     p.add_argument('--drop-duplicates', type=str, default='non-existent',
                    help='Unavailable at the moment')
-                   # help='CSV file of the previous version of Kinetics.')
+    p.add_argument('-m', '--download_mode', type=str, default='download', choices=["download", "redownload"])
     main(**vars(p.parse_args()))
