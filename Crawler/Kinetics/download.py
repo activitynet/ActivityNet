@@ -4,8 +4,10 @@ import json
 import os
 import shutil
 import subprocess
+from typing import Dict, List, Set
 import uuid
 from collections import OrderedDict
+from pathlib import Path
 
 from joblib import delayed
 from joblib import Parallel
@@ -110,13 +112,19 @@ def download_clip(video_identifier, output_filename,
     return status, 'Downloaded'
 
 
-def download_clip_wrapper(row, label_to_dir, trim_format, tmp_dir):
+def download_clip_wrapper(row, label_to_dir, trim_format, tmp_dir, existing_files:Dict[str,Path]={}):
     """Wrapper for parallel processing purposes."""
     output_filename = construct_video_filename(row, label_to_dir,
                                                trim_format)
     clip_id = os.path.basename(output_filename).split('.mp4')[0]
     if os.path.exists(output_filename):
         status = tuple([clip_id, True, 'Exists'])
+        print(status)
+        return status
+    if clip_id in existing_files:
+        shutil.copyfile(src=existing_files[clip_id],dst=output_filename)
+        status = tuple([clip_id, True, 'Copied'])
+        print(status)
         return status
 
     downloaded, log = download_clip(row['video-id'], output_filename,
@@ -125,8 +133,6 @@ def download_clip_wrapper(row, label_to_dir, trim_format, tmp_dir):
     status = tuple([clip_id, downloaded, log])
     print(status)
     return status
-
-
 
 def redownload_clip_wrapper(row, label_to_dir, trim_format, tmp_dir):
     """Wrapper for parallel processing purposes."""
@@ -193,19 +199,19 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
 
 def main(input_csv, output_dir,
          trim_format='%06d', num_jobs=24, tmp_dir='/tmp/kinetics',
-         drop_duplicates=False, download_mode="download"):
+         drop_duplicates=False, download_mode="download", source_dir=""):
 
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
-    # if os.path.isfile(drop_duplicates):
-    #     print('Attempt to remove duplicates')
-    #     old_dataset = parse_kinetics_annotations(drop_duplicates,
-    #                                              ignore_is_cc=True)
-    #     df = pd.concat([dataset, old_dataset], axis=0, ignore_index=True)
-    #     df.drop_duplicates(inplace=True, keep=False)
-    #     print(dataset.shape, old_dataset.shape)
-    #     dataset = df
-    #     print(dataset.shape)
+    
+    # Make catalogue of existing files
+    source_dir = Path(source_dir)
+    if source_dir.is_dir():
+        print("Looking through source dir")
+        existing_files = {str(p.stem): p for p in source_dir.rglob("*.mp4")} if source_dir.is_dir() else {}
+        print("Done looking")
+    else:
+        existing_files = {}
 
     # Creates folders where videos will be saved later.
     label_to_dir = create_video_folders(dataset, output_dir, tmp_dir)
@@ -219,11 +225,12 @@ def main(input_csv, output_dir,
     if num_jobs == 1:
         status_lst = []
         for i, row in dataset.iterrows():
-            status_lst.append(run(row, label_to_dir, trim_format, tmp_dir))
+            status_lst.append(run(row, label_to_dir, trim_format, tmp_dir, existing_files))
     else:
-        status_lst = Parallel(n_jobs=num_jobs)(delayed(run)(
-            row, label_to_dir,
-            trim_format, tmp_dir) for i, row in dataset.iterrows())
+        status_lst = Parallel(n_jobs=num_jobs)(
+            delayed(run)(row, label_to_dir, trim_format, tmp_dir) 
+            for i, row in dataset.iterrows()
+        )
 
     # Clean tmp dir.
     shutil.rmtree(tmp_dir)
@@ -250,4 +257,5 @@ if __name__ == '__main__':
     p.add_argument('--drop-duplicates', type=str, default='non-existent',
                    help='Unavailable at the moment')
     p.add_argument('-m', '--download_mode', type=str, default='download', choices=["download", "redownload"])
+    p.add_argument('-s', '--source-dir', type=str, default='', help="Directory in which to look for files before download.")
     main(**vars(p.parse_args()))
