@@ -12,6 +12,7 @@ from pathlib import Path
 from joblib import delayed
 from joblib import Parallel
 import pandas as pd
+from functools import partial
 
 import random
 def generate_key():
@@ -199,10 +200,12 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
 
 def main(input_csv, output_dir,
          trim_format='%06d', num_jobs=24, tmp_dir='/tmp/kinetics',
-         drop_duplicates=False, download_mode="download", source_dir=""):
+         drop_duplicates=False, download_mode="download", source_dir="", reverse=False):
 
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
+    if reverse:
+        dataset.reindex(index=dataset.index[::-1])
     
     # Make catalogue of existing files
     source_dir = Path(source_dir)
@@ -217,7 +220,7 @@ def main(input_csv, output_dir,
     label_to_dir = create_video_folders(dataset, output_dir, tmp_dir)
 
     run = {
-        "download": download_clip_wrapper, 
+        "download": partial(download_clip_wrapper, existing_files=existing_files), 
         "redownload": redownload_clip_wrapper
     }[download_mode]
 
@@ -225,7 +228,7 @@ def main(input_csv, output_dir,
     if num_jobs == 1:
         status_lst = []
         for i, row in dataset.iterrows():
-            status_lst.append(run(row, label_to_dir, trim_format, tmp_dir, existing_files))
+            status_lst.append(run(row, label_to_dir, trim_format, tmp_dir))
     else:
         status_lst = Parallel(n_jobs=num_jobs)(
             delayed(run)(row, label_to_dir, trim_format, tmp_dir) 
@@ -258,4 +261,5 @@ if __name__ == '__main__':
                    help='Unavailable at the moment')
     p.add_argument('-m', '--download_mode', type=str, default='download', choices=["download", "redownload"])
     p.add_argument('-s', '--source-dir', type=str, default='', help="Directory in which to look for files before download.")
+    p.add_argument('-r', '--reverse', action="store_true", help="Reverse direction of download.")
     main(**vars(p.parse_args()))
