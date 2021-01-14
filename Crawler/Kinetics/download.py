@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import glob
 import json
@@ -75,33 +77,36 @@ def download_clip(video_identifier, output_filename,
 
     status = False
     # Construct command line for getting the direct video link.
-    tmp_filename = os.path.join(tmp_dir,
-                                '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
                '--quiet', '--no-warnings',
-               '-f', 'mp4',
-               '-o', '"%s"' % tmp_filename,
+               '-f', '18', # 640x360 h264 encoded video
+               '--get-url',
                '"%s"' % (url_base + video_identifier)]
     command = ' '.join(command)
+    direct_download_url = None
     attempts = 0
     while True:
-        try:
-            output = subprocess.check_output(command, shell=True,
-                                             stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as err:
+         try:
+            direct_download_url = subprocess.check_output(command,
+                                                          shell=True,
+                                                          stderr=subprocess.STDOUT)
+            direct_download_url = direct_download_url.strip().decode('utf-8')
+         except subprocess.CalledProcessError as err:
             attempts += 1
             if attempts == num_attempts:
                 return status, err.output
-        else:
-            break
+            else:
+                continue
 
-    tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
+         break
+
     # Construct command to trim the videos (ffmpeg required).
     command = ['ffmpeg',
-               '-i', '"%s"' % tmp_filename,
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
-               '-c:v', 'libx264', '-c:a', 'copy',
+               '-i', "'%s'" % direct_download_url,
+               '-c:v', 'libx264', '-preset', 'ultrafast',
+               '-c:a', 'aac',
                '-threads', '1',
                '-loglevel', 'panic',
                '"%s"' % output_filename]
@@ -114,7 +119,6 @@ def download_clip(video_identifier, output_filename,
 
     # Check if the video was successfully saved.
     status = os.path.exists(output_filename)
-    os.remove(tmp_filename)
     return status, 'Downloaded'
 
 
